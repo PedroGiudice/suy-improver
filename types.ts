@@ -1,12 +1,3 @@
-export enum ToneStyle {
-  Professional = 'Professional',
-  Concise = 'Clear & Concise',
-  Friendly = 'Friendly & Warm',
-  Academic = 'Academic',
-  Creative = 'Creative & Bold',
-  Custom = 'Custom Instruction'
-}
-
 export enum GeminiModel {
   Flash = 'gemini-3-flash-preview',
   Pro = 'gemini-3-pro-preview'
@@ -14,14 +5,10 @@ export enum GeminiModel {
 
 export interface TextImprovementRequest {
   text: string;
-  style: ToneStyle;
   model: GeminiModel;
-  customInstruction?: string;
-}
-
-export interface TextImprovementResponse {
-  improvedText: string;
-  markdown: string;
+  systemInstruction?: string;
+  temperature?: number;
+  thinkingBudget?: number;
 }
 
 export interface HistoryItem {
@@ -29,7 +16,8 @@ export interface HistoryItem {
   timestamp: number;
   original: string;
   improved: string;
-  style: ToneStyle;
   model: GeminiModel;
-  customInstruction?: string;
+  systemInstruction?: string;
+  temperature?: number;
+  thinkingBudget?: number;
 }

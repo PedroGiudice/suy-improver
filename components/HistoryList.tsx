@@ -1,5 +1,5 @@
 import React from 'react';
-import { History, Clock, ArrowRight, Trash2, Zap, BrainCircuit } from 'lucide-react';
+import { History, Clock, ArrowRight, Trash2, Zap, BrainCircuit, Thermometer, Cpu } from 'lucide-react';
 import { HistoryItem, GeminiModel } from '../types';
 
 interface HistoryListProps {
@@ -69,13 +69,28 @@ export const HistoryList: React.FC<HistoryListProps> = ({
               >
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded-full border border-indigo-400/20">
-                      {item.style}
-                    </span>
                     {item.model === GeminiModel.Pro ? (
-                       <BrainCircuit className="w-3 h-3 text-purple-400" />
+                       <div className="flex items-center space-x-2">
+                         <div className="flex items-center text-xs font-medium text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded-full border border-purple-400/20">
+                            <BrainCircuit className="w-3 h-3 mr-1" /> Pro
+                         </div>
+                         {item.thinkingBudget && (
+                           <div className="flex items-center text-[10px] text-zinc-500" title="Thinking Budget">
+                             <Cpu className="w-3 h-3 mr-1 opacity-70" /> {item.thinkingBudget}
+                           </div>
+                         )}
+                       </div>
                     ) : (
-                       <Zap className="w-3 h-3 text-amber-400" />
+                       <div className="flex items-center space-x-2">
+                         <div className="flex items-center text-xs font-medium text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                            <Zap className="w-3 h-3 mr-1" /> Flash
+                         </div>
+                         {item.temperature !== undefined && (
+                           <div className="flex items-center text-[10px] text-zinc-500" title="Temperature">
+                             <Thermometer className="w-3 h-3 mr-1 opacity-70" /> {item.temperature}
+                           </div>
+                         )}
+                       </div>
                     )}
                   </div>
                   <span className="text-xs text-zinc-500 font-mono">
@@ -83,17 +98,20 @@ export const HistoryList: React.FC<HistoryListProps> = ({
                   </span>
                 </div>
                 
+                {item.systemInstruction && (
+                   <div className="mb-3">
+                     <p className="text-[10px] uppercase tracking-wider text-zinc-600 font-semibold mb-1">Instruction</p>
+                     <p className="text-xs text-zinc-400 line-clamp-1 italic border-l-2 border-zinc-800 pl-2">
+                        {item.systemInstruction}
+                     </p>
+                   </div>
+                )}
+                
                 <div className="space-y-2">
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-zinc-600 font-semibold mb-0.5">Original</p>
                     <p className="text-xs text-zinc-400 line-clamp-2 font-mono bg-zinc-900/50 p-1.5 rounded">
                       {item.original}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-zinc-600 font-semibold mb-0.5">Result</p>
-                    <p className="text-xs text-zinc-300 line-clamp-2 font-sans">
-                      {item.improved}
                     </p>
                   </div>
                 </div>

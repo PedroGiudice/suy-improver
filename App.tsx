@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Sparkles, Download, Copy, Check, AlignLeft, FileText, History, Zap, ArrowRight, X, BrainCircuit } from 'lucide-react';
 import { improveText } from './services/geminiService';
-import { ToneStyle, HistoryItem, GeminiModel } from './types';
+import { HistoryItem, GeminiModel } from './types';
 import { Button } from './components/Button';
 import { ConfigMenu } from './components/ConfigMenu';
 import { HistoryList } from './components/HistoryList';
@@ -11,9 +11,13 @@ const App: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedStyle, setSelectedStyle] = useState<ToneStyle>(ToneStyle.Concise);
+  
+  // Configuration State
   const [selectedModel, setSelectedModel] = useState<GeminiModel>(GeminiModel.Flash);
-  const [customInstruction, setCustomInstruction] = useState('');
+  const [systemInstruction, setSystemInstruction] = useState('');
+  const [temperature, setTemperature] = useState(0.7);
+  const [thinkingBudget, setThinkingBudget] = useState(16000); // Default mid-range thinking
+
   const [activeTab, setActiveTab] = useState<'preview' | 'markdown'>('preview');
   const [hasCopied, setHasCopied] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -43,12 +47,15 @@ const App: React.FC = () => {
     if (!inputText.trim()) return;
 
     setIsLoading(true);
-    // Do not clear outputText immediately to allow comparison until new text arrives? 
-    // Actually, usually better to clear or show loading state overlay.
-    // Let's keep old text but show loading overlay.
     
     try {
-      const result = await improveText(inputText, selectedStyle, selectedModel, customInstruction);
+      const result = await improveText(
+        inputText, 
+        selectedModel, 
+        systemInstruction, 
+        temperature, 
+        thinkingBudget
+      );
       setOutputText(result);
 
       // Add to history
@@ -57,16 +64,16 @@ const App: React.FC = () => {
         timestamp: Date.now(),
         original: inputText,
         improved: result,
-        style: selectedStyle,
         model: selectedModel,
-        customInstruction: selectedStyle === ToneStyle.Custom ? customInstruction : undefined
+        systemInstruction: systemInstruction,
+        temperature: selectedModel === GeminiModel.Flash ? temperature : undefined,
+        thinkingBudget: selectedModel === GeminiModel.Pro ? thinkingBudget : undefined
       };
       
       setHistory(prev => [newItem, ...prev]);
 
     } catch (error) {
       console.error(error);
-      // We could show a toast here, but for now we put it in output text
       setOutputText("Error: Failed to generate text. Please try again.");
     } finally {
       setIsLoading(false);
@@ -76,13 +83,11 @@ const App: React.FC = () => {
   const restoreVersion = (item: HistoryItem) => {
     setInputText(item.original);
     setOutputText(item.improved);
-    setSelectedStyle(item.style);
-    if (item.model) {
-      setSelectedModel(item.model);
-    }
-    if (item.customInstruction) {
-      setCustomInstruction(item.customInstruction);
-    }
+    if (item.model) setSelectedModel(item.model);
+    if (item.systemInstruction) setSystemInstruction(item.systemInstruction);
+    if (item.temperature !== undefined) setTemperature(item.temperature);
+    if (item.thinkingBudget !== undefined) setThinkingBudget(item.thinkingBudget);
+    
     setIsHistoryOpen(false);
   };
 
@@ -102,12 +107,7 @@ const App: React.FC = () => {
     if (lines.length > 0) {
       const firstLine = lines[0].trim();
       // Heuristic: If first line is reasonably short and doesn't look like a normal sentence
-      // (no spaces or very few, ends in .md)
       if (firstLine.length < 100 && firstLine.length > 0) {
-         // Sanitize filename to be safe
-         // If it already has extension, use it, otherwise append .md
-         // The safe replace might kill the dot if we are strict, but let's allow dots.
-         
          const reallySafeName = firstLine.replace(/[^a-zA-Z0-9\._-]/g, '');
          if (reallySafeName.length > 0) {
             filename = reallySafeName;
@@ -160,12 +160,14 @@ const App: React.FC = () => {
 
           <div className="flex items-center space-x-1 sm:space-x-4">
              <ConfigMenu 
-               selectedStyle={selectedStyle}
-               onStyleChange={setSelectedStyle}
                selectedModel={selectedModel}
                onModelChange={setSelectedModel}
-               customInstruction={customInstruction}
-               onCustomInstructionChange={setCustomInstruction}
+               systemInstruction={systemInstruction}
+               onSystemInstructionChange={setSystemInstruction}
+               temperature={temperature}
+               onTemperatureChange={setTemperature}
+               thinkingBudget={thinkingBudget}
+               onThinkingBudgetChange={setThinkingBudget}
                isOpen={isConfigOpen}
                onToggle={() => setIsConfigOpen(!isConfigOpen)}
                onClose={() => setIsConfigOpen(false)}
